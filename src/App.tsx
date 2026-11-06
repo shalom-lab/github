@@ -20,8 +20,16 @@ import { clearTemplate, loadTemplate, saveTemplate } from "./lib/idb";
 import { DEFAULT_TEMPLATE, parseSecretsText } from "./lib/parseSecrets";
 
 type Status = { kind: "idle" | "ok" | "err" | "busy"; text: string };
+type TabId = "inject" | "settings" | "help";
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: "inject", label: "注入" },
+  { id: "settings", label: "设置" },
+  { id: "help", label: "说明" },
+];
 
 export default function App() {
+  const [tab, setTab] = useState<TabId>("inject");
   const [tokenInput, setTokenInput] = useState("");
   const [savedToken, setSavedToken] = useState("");
   const [login, setLogin] = useState("");
@@ -39,7 +47,6 @@ export default function App() {
   const [idbStatus, setIdbStatus] = useState<Status>({ kind: "idle", text: "" });
   const [showToken, setShowToken] = useState(false);
 
-  // Bootstrap BYOK + IndexedDB
   useEffect(() => {
     const t = readToken();
     const r = readRepo();
@@ -51,6 +58,8 @@ export default function App() {
     });
     if (t) {
       void bootstrapWithToken(t, r);
+    } else {
+      setTab("settings");
     }
   }, []);
 
@@ -79,6 +88,7 @@ export default function App() {
         kind: "err",
         text: e instanceof Error ? e.message : String(e),
       });
+      setTab("settings");
     }
   }
 
@@ -107,6 +117,7 @@ export default function App() {
         kind: "ok",
         text: `已保存。@${user.login}，${list.length} 个仓库可选`,
       });
+      setTab("inject");
     } catch (e) {
       setSettingsStatus({
         kind: "err",
@@ -130,10 +141,11 @@ export default function App() {
   async function onSaveTemplate() {
     setIdbStatus({ kind: "busy", text: "保存中…" });
     try {
-      // validate before save
-      parseSecretsText(secretsText);
-      await saveTemplate(secretsText);
-      setIdbStatus({ kind: "ok", text: "已保存到 IndexedDB" });
+      const secrets = parseSecretsText(secretsText);
+      const json = JSON.stringify(secrets, null, 2);
+      await saveTemplate(json);
+      setSecretsText(json);
+      setIdbStatus({ kind: "ok", text: "已保存为 JSON 到 IndexedDB" });
     } catch (e) {
       setIdbStatus({
         kind: "err",
@@ -160,7 +172,8 @@ export default function App() {
   async function onInject() {
     const token = savedToken || readToken();
     if (!token) {
-      setInjectStatus({ kind: "err", text: "请先在上方保存 GitHub PAT" });
+      setInjectStatus({ kind: "err", text: "请先到「设置」保存 GitHub PAT" });
+      setTab("settings");
       return;
     }
     if (!selectedRepo) {
@@ -221,135 +234,199 @@ export default function App() {
     idbStatus.kind === "busy";
 
   return (
-    <div className="page">
-      <header className="hero">
-        <p className="brand">Highutb</p>
-        <h1>Actions Secrets 注入</h1>
-        <p className="lede">
-          BYOK 填入 PAT，编辑键值对，选中仓库一键写入 GitHub Actions Secrets。
-        </p>
-      </header>
-
-      <section className="panel" aria-labelledby="byok-title">
-        <div className="panel-head">
-          <h2 id="byok-title">BYOK · GitHub Token</h2>
-          <span className={`pill ${tokenReady ? "pill-ok" : "pill-muted"}`}>
+    <div className="bench">
+      <header className="topbar">
+        <div className="topbar-brand">
+          <span className="logo" aria-hidden>
+            H
+          </span>
+          <div>
+            <p className="brand">Highutb</p>
+            <p className="tagline">Actions Secrets 工作台</p>
+          </div>
+        </div>
+        <div className="topbar-meta">
+          <span className={`chip ${tokenReady ? "chip-ok" : "chip-warn"}`}>
             {tokenReady
-              ? `已保存${login ? ` · @${login}` : ""} · ${maskToken(savedToken)}`
-              : "未设置"}
+              ? `@${login || "…"} · ${maskToken(savedToken)}`
+              : "未配置 Token"}
           </span>
         </div>
-        <p className="hint">
-          本地键名 <code>{TOKEN_KEY}</code> / <code>{REPO_KEY}</code>
-          。可在 Settings 填写，也可事先写入 localStorage；启动会自动读。
-          PAT 需具备目标仓库的 <strong>admin</strong>（写 Actions Secrets）。
-        </p>
-        <label className="field">
-          <span>Personal Access Token</span>
-          <div className="row">
-            <input
-              type={showToken ? "text" : "password"}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="ghp_… 或 fine-grained token"
-              value={tokenInput}
-              onChange={(e) => setTokenInput(e.target.value)}
-              disabled={busy}
-            />
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={() => setShowToken((v) => !v)}
-            >
-              {showToken ? "隐藏" : "显示"}
-            </button>
-          </div>
-        </label>
-        <div className="actions">
-          <button type="button" className="btn primary" onClick={onSaveToken} disabled={busy}>
-            保存
-          </button>
-          <button type="button" className="btn danger" onClick={onClearToken} disabled={busy}>
-            清除
-          </button>
-        </div>
-        <StatusLine status={settingsStatus} />
-      </section>
+      </header>
 
-      <section className="panel" aria-labelledby="inject-title">
-        <div className="panel-head">
-          <h2 id="inject-title">注入到仓库</h2>
-        </div>
-
-        <label className="field">
-          <span>目标仓库</span>
-          <select
-            value={selectedRepo}
-            onChange={(e) => {
-              setSelectedRepo(e.target.value);
-              if (e.target.value) saveRepo(e.target.value);
-            }}
-            disabled={!tokenReady || busy || repos.length === 0}
+      <nav className="tabs" role="tablist" aria-label="工作台分区">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`tab ${tab === t.id ? "tab-active" : ""}`}
+            onClick={() => setTab(t.id)}
           >
-            {repos.length === 0 ? (
-              <option value="">请先保存有效 Token</option>
-            ) : (
-              repos.map((r) => (
-                <option key={r.full_name} value={r.full_name}>
-                  {r.full_name}
-                  {r.private ? " · private" : ""}
-                  {r.permissions?.admin ? " · admin" : ""}
-                </option>
-              ))
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      <main className="workspace" role="tabpanel">
+        {tab === "inject" && (
+          <section className="pane" aria-label="注入">
+            <div className="pane-head">
+              <h1>注入 Secrets</h1>
+              <p>选择仓库，编辑键值对，写入 Actions Secrets。</p>
+            </div>
+
+            {!tokenReady && (
+              <div className="banner">
+                尚未配置 Token。
+                <button type="button" className="linkish" onClick={() => setTab("settings")}>
+                  去设置
+                </button>
+              </div>
             )}
-          </select>
-        </label>
 
-        <label className="field">
-          <span>Secrets 键值对（KEY=VALUE 或 JSON）</span>
-          <textarea
-            rows={12}
-            spellCheck={false}
-            value={secretsText}
-            onChange={(e) => setSecretsText(e.target.value)}
-            disabled={busy}
-            placeholder={"API_KEY=xxx\nOTHER=yyy\n\n# 或\n{\"API_KEY\":\"xxx\"}"}
-          />
-        </label>
+            <label className="field">
+              <span>目标仓库</span>
+              <select
+                value={selectedRepo}
+                onChange={(e) => {
+                  setSelectedRepo(e.target.value);
+                  if (e.target.value) saveRepo(e.target.value);
+                }}
+                disabled={!tokenReady || busy || repos.length === 0}
+              >
+                {repos.length === 0 ? (
+                  <option value="">请先在「设置」保存有效 Token</option>
+                ) : (
+                  repos.map((r) => (
+                    <option key={r.full_name} value={r.full_name}>
+                      {r.full_name}
+                      {r.private ? " · private" : ""}
+                      {r.permissions?.admin ? " · admin" : ""}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
 
-        <div className="actions">
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={onSaveTemplate}
-            disabled={busy}
-          >
-            保存到 IndexedDB
-          </button>
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={onClearTemplate}
-            disabled={busy}
-          >
-            清除模板
-          </button>
-          <button
-            type="button"
-            className="btn primary"
-            onClick={onInject}
-            disabled={busy || !tokenReady || !selectedRepo}
-          >
-            注入
-          </button>
-        </div>
-        <StatusLine status={idbStatus} />
-        <StatusLine status={injectStatus} />
-      </section>
+            <label className="field">
+              <span>Secrets 键值对（KEY=VALUE 或 JSON）</span>
+              <textarea
+                rows={14}
+                spellCheck={false}
+                value={secretsText}
+                onChange={(e) => setSecretsText(e.target.value)}
+                disabled={busy}
+                placeholder={'API_KEY=xxx\nOTHER=yyy\n\n# 或\n{"API_KEY":"xxx"}'}
+              />
+            </label>
+
+            <div className="actions">
+              <button type="button" className="btn" onClick={onSaveTemplate} disabled={busy}>
+                保存 JSON
+              </button>
+              <button type="button" className="btn" onClick={onClearTemplate} disabled={busy}>
+                清除模板
+              </button>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={onInject}
+                disabled={busy || !tokenReady || !selectedRepo}
+              >
+                注入
+              </button>
+            </div>
+            <StatusLine status={idbStatus} />
+            <StatusLine status={injectStatus} />
+          </section>
+        )}
+
+        {tab === "settings" && (
+          <section className="pane" aria-label="设置">
+            <div className="pane-head">
+              <h1>BYOK 设置</h1>
+              <p>Token 仅存本机 localStorage，启动自动读取。</p>
+            </div>
+
+            <p className="hint">
+              键名 <code>{TOKEN_KEY}</code> / <code>{REPO_KEY}</code>
+              。也可事先写入 localStorage。PAT 需对目标仓库有{" "}
+              <strong>admin</strong>（写 Actions Secrets）。
+            </p>
+
+            <label className="field">
+              <span>Personal Access Token</span>
+              <div className="row">
+                <input
+                  type={showToken ? "text" : "password"}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="ghp_… 或 fine-grained token"
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  disabled={busy}
+                />
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setShowToken((v) => !v)}
+                >
+                  {showToken ? "隐藏" : "显示"}
+                </button>
+              </div>
+            </label>
+
+            <div className="actions">
+              <button
+                type="button"
+                className="btn primary"
+                onClick={onSaveToken}
+                disabled={busy}
+              >
+                保存
+              </button>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={onClearToken}
+                disabled={busy}
+              >
+                清除
+              </button>
+            </div>
+            <StatusLine status={settingsStatus} />
+          </section>
+        )}
+
+        {tab === "help" && (
+          <section className="pane" aria-label="说明">
+            <div className="pane-head">
+              <h1>使用说明</h1>
+              <p>本机直连 GitHub API，不经第三方中转。</p>
+            </div>
+            <ol className="steps">
+              <li>
+                在「设置」填入 PAT 并保存（Classic 勾选 <code>repo</code>；Fine-grained
+                需 Secrets: Read and write）。
+              </li>
+              <li>到「注入」下拉选择目标仓库。</li>
+              <li>
+                编辑 <code>KEY=VALUE</code> 或 JSON；点「保存 JSON」会规范化成 JSON
+                对象写入 IndexedDB。
+              </li>
+              <li>点「注入」创建/覆盖该仓库的 Actions Secrets。</li>
+            </ol>
+            <p className="hint">
+              键值模板存 IndexedDB；Token 存 localStorage。两者互不混用。
+            </p>
+          </section>
+        )}
+      </main>
 
       <footer className="foot">
-        Token 仅存本机 localStorage；键值模板存 IndexedDB。注入时经浏览器直连
-        api.github.com，不经第三方中转。
+        shalom-lab/github · Token / 模板只留在本机浏览器
       </footer>
     </div>
   );

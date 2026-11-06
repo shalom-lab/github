@@ -10,7 +10,7 @@ GitHub Pages 上的 **Actions Secrets 注入台**：BYOK 填入 PAT，编辑键�
 - **仓库下拉**：用 Token 拉取可访问仓库列表
 - **键值编辑**：支持 `KEY=VALUE` 多行，或 JSON 对象 `{"A":"B"}`
 - **注入**：对选中仓库创建/更新 Actions Secrets（libsodium sealed box）
-- **IndexedDB**：键值模板可保存 / 清除（与 Token 分开存储）
+- **IndexedDB**：键值模板以 **JSON** 保存 / 清除（与 Token 分开存储）
 
 ## localStorage 键名
 

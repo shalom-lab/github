@@ -4,6 +4,7 @@ const STORE = "templates";
 const RECORD_ID = "default";
 const VERSION = 1;
 
+/** `text` 存规范化后的 JSON 字符串，例如 {"A":"B"}。 */
 export type SecretsTemplate = {
   id: string;
   text: string;
