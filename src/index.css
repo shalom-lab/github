@@ -92,11 +92,12 @@ body {
   place-items: center;
   border-radius: 10px;
   background: linear-gradient(145deg, #2dd4bf, #0f766e);
-  color: #06251f;
-  font-weight: 800;
-  font-size: 1.05rem;
-  letter-spacing: -0.03em;
+  color: #ecfffb;
   box-shadow: 0 8px 20px rgba(15, 118, 110, 0.35);
+}
+
+.logo svg {
+  display: block;
 }
 
 .brand {

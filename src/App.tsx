@@ -301,7 +301,33 @@ export default function App() {
       <aside className="sidebar">
         <div className="side-brand">
           <span className="logo" aria-hidden>
-            H
+            <svg viewBox="0 0 32 32" width="22" height="22">
+              <g
+                transform="rotate(-45 16 16)"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M10.5 6.2h7" />
+                <path d="M14 6.2v3.2" />
+                <rect x="11.2" y="9.2" width="5.6" height="12.2" rx="1.2" />
+                <rect
+                  x="12.2"
+                  y="14.2"
+                  width="3.6"
+                  height="5.8"
+                  rx="0.6"
+                  fill="currentColor"
+                  stroke="none"
+                  opacity="0.35"
+                />
+                <path d="M16.8 11.4h1.6M16.8 13.2h1.6M16.8 15h1.6" strokeWidth="1.3" />
+                <path d="M12.4 21.4h3.2v1.6h-3.2z" fill="currentColor" stroke="none" />
+                <path d="M14 23v4.4" />
+              </g>
+            </svg>
           </span>
           <div>
             <p className="brand">Highutb</p>
