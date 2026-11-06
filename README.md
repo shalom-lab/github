@@ -1,4 +1,4 @@
-# Highutb
+# Inception
 
 在线工具：[https://shalom-lab.github.io/github/](https://shalom-lab.github.io/github/)
 
@@ -16,10 +16,11 @@ GitHub Pages 上的 **Actions Secrets 注入台**：BYOK 填入 PAT，编辑键�
 
 | 键 | 含义 |
 | --- | --- |
-| `gh-highutb-token` | GitHub PAT |
-| `gh-highutb-repo` | 上次选中的 `owner/repo` |
+| `gh-inception-token` | GitHub PAT |
+| `gh-inception-repo` | 上次选中的 `owner/repo` |
 
-可在页面填写，也可事先写入 localStorage；启动会自动读。
+可在页面填写，也可事先写入 localStorage；启动会自动读。  
+（旧键 `gh-highutb-*` 会在首次读取时自动迁移。）
 
 ## 权限要求
 

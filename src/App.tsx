@@ -330,7 +330,7 @@ export default function App() {
             </svg>
           </span>
           <div>
-            <p className="brand">Highutb</p>
+            <p className="brand">Inception</p>
             <p className="tagline">Secrets 工作台</p>
           </div>
         </div>
