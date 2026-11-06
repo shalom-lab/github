@@ -1,5 +1,7 @@
 # Highutb
 
+在线工具：[https://shalom-lab.github.io/github/](https://shalom-lab.github.io/github/)
+
 GitHub Pages 上的 **Actions Secrets 注入台**：BYOK 填入 PAT，编辑键值对，下拉选仓库，一键写入目标仓库的 GitHub Actions Secrets。
 
 ## 功能
@@ -21,7 +23,10 @@ GitHub Pages 上的 **Actions Secrets 注入台**：BYOK 填入 PAT，编辑键�
 
 ## 权限要求
 
-PAT 需要对目标仓库有 **admin**（才能读写 Actions Secrets）。经典 token 建议 `repo` scope；fine-grained 需 Secrets: Read and write。
+PAT 需要对目标仓库有 **admin**（才能写 Actions Secrets）。
+
+- Classic：勾选 `repo`
+- Fine-grained：目标仓库 + **Secrets: Read and write**（Metadata: Read）
 
 ## 本地开发
 
@@ -30,11 +35,13 @@ npm install
 npm run dev
 ```
 
-## 部署（GitHub Pages）
+开发地址：`http://127.0.0.1:5173/github/`
 
-远程仓库：`https://github.com/shalom-lab/github.git`（Vite `base` 为 `/github/`）。
+## 部署
 
-1. Push 到 `main` / `master`
+仓库：`https://github.com/shalom-lab/github.git`（默认分支 `main`，Vite `base` 为 `/github/`）。
+
+1. Push 到 `main`
 2. Settings → Pages → Source: **GitHub Actions**
 3. 站点：`https://shalom-lab.github.io/github/`
 
