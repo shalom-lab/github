@@ -15,7 +15,7 @@ function spaFallback(): Plugin {
       const indexHtml = resolve(dist, "index.html");
       if (!existsSync(indexHtml)) return;
       copyFileSync(indexHtml, resolve(dist, "404.html"));
-      for (const route of ["settings"]) {
+      for (const route of ["settings", "templates"]) {
         const dir = resolve(dist, route);
         mkdirSync(dir, { recursive: true });
         writeFileSync(resolve(dir, "index.html"), readFileSync(indexHtml, "utf8"));
